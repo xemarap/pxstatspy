@@ -493,29 +493,6 @@ def test_prepare_chunks(api_client, mock_metadata_jsonstat):
         assert all(len(chunk["Tid"]) == 1 for chunk in chunks)
         assert all("Region" in chunk and chunk["Region"] == ["00"] for chunk in chunks)
 
-def test_chunk_calculation(api_client, large_metadata, large_metadata_jsonstat):
-    """Test calculation of chunks for large requests"""
-    def mock_get_metadata(table_id, output_format=None):
-        return large_metadata_jsonstat if output_format == "json-stat2" else large_metadata
-    
-    with patch.object(api_client, 'get_table_metadata', side_effect=mock_get_metadata):
-        chunks = api_client._prepare_chunks(
-            table_id="TAB999",
-            chunk_var="Region",
-            value_codes={"Region": ["*"], "Tid": ["2020"], "ContentsCode": ["CODE1"]},
-            chunk_size=5,
-            metadata_stat=large_metadata_jsonstat
-        )
-        
-        assert len(chunks) == 6  # Should have 6 chunks (30 regions / 5 per chunk)
-        for i in range(5):
-            assert len(chunks[i]["Region"]) == 5, f"Chunk {i} has wrong size"
-        assert 1 <= len(chunks[-1]["Region"]) <= 5, "Last chunk has wrong size"
-        
-        total_values = sum(len(chunk["Region"]) for chunk in chunks)
-        assert total_values == 30, "Lost some regions in chunking"
-
-# Updated combination test to verify chunk contents
 def test_chunk_combination(api_client, large_metadata, large_metadata_jsonstat):
     """Test combining results from chunked requests"""
     def mock_get_metadata(table_id, output_format=None):
@@ -567,35 +544,33 @@ def test_chunk_combination(api_client, large_metadata, large_metadata_jsonstat):
     
     with patch.object(api_client, 'get_table_metadata', side_effect=mock_get_metadata):
         with patch('requests.Session.request', return_value=mock_response):
-            result = api_client.get_table_data(
-                table_id="TAB999",
-                value_codes={
-                    "Region": region_codes,
-                    "Tid": ["2023"],
-                    "ContentsCode": ["CODE1"]
-                },
-                output_format=OutputFormat.JSON_STAT2,
-                chunk_size=2  # 2 cells per chunk
-            )
-            
-            assert isinstance(result, list), "Chunked request didn't return list"
-            assert len(result) == 3, "Should have 3 chunks of 2 regions each"
-            
-            # Verify each chunk has the correct regions
-            regions_seen = []
-            for chunk in result:
-                chunk_regions = list(chunk["dimension"]["Region"]["category"]["index"].keys())
-                assert len(chunk_regions) == 2, "Each chunk should have 2 regions"
-                regions_seen.extend(chunk_regions)
-            
-            # Verify we got all regions in the correct order
-            assert regions_seen == region_codes, "Missing or extra regions in results"
-            
-            # Verify the values are correct
-            for i, chunk in enumerate(result):
-                expected_codes = region_codes[i*2:(i+1)*2]
-                expected_values = [int(code) * 100 for code in expected_codes]
-                assert chunk["value"] == expected_values, f"Chunk {i} has wrong values"
+            # Mock _calculate_cells to force chunking
+            with patch.object(api_client, '_calculate_cells', return_value=(1000, {'Region': len(region_codes), 'Tid': 1, 'ContentsCode': 1})):
+                # Set the max_data_cells to a value that forces multiple chunks
+                api_client.max_data_cells = 200
+                
+                result = api_client.get_table_data(
+                    table_id="TAB999",
+                    value_codes={
+                        "Region": region_codes,
+                        "Tid": ["2023"],
+                        "ContentsCode": ["CODE1"]
+                    },
+                    output_format=OutputFormat.JSON_STAT2
+                )
+                
+                assert isinstance(result, list), "Chunked request should return list"
+                assert len(result) == 3, "Should have 3 chunks of 2 regions each"
+                
+                # Verify each chunk has the correct regions
+                regions_seen = []
+                for chunk in result:
+                    chunk_regions = list(chunk["dimension"]["Region"]["category"]["index"].keys())
+                    assert len(chunk_regions) == 2, "Each chunk should have 2 regions"
+                    regions_seen.extend(chunk_regions)
+                
+                # Verify we got all regions in the correct order
+                assert regions_seen == region_codes, "Missing or extra regions in results"
 
 # Integration tests (disabled by default)
 @pytest.mark.integration

@@ -745,17 +745,16 @@ class PxAPI:
                     print(f"... and {total_values - limit} more values")
     
     def get_table_data(self,
-                       table_id: str,
-                       value_codes: Optional[Dict[str, List[str]]] = None,
-                       code_lists: Optional[Dict[str, str]] = None,
-                       output_format: Optional[OutputFormat] = None,
-                       output_format_params: Optional[List[OutputFormatParam]] = None,
-                       heading: Optional[List[str]] = None,
-                       stub: Optional[List[str]] = None,
-                       chunk_size: Optional[int] = None) -> Union[Dict, str, bytes, List[Union[Dict, str, bytes]]]:
+                  table_id: str,
+                  value_codes: Optional[Dict[str, List[str]]] = None,
+                  code_lists: Optional[Dict[str, str]] = None,
+                  output_format: Optional[OutputFormat] = None,
+                  output_format_params: Optional[List[OutputFormatParam]] = None,
+                  heading: Optional[List[str]] = None,
+                  stub: Optional[List[str]] = None) -> Union[Dict, str, bytes, List[Union[Dict, str, bytes]]]:
         """
-        Get table data with smart chunking support.
-    
+        Get table data with automatic chunking for large requests.
+
         Args:
             table_id: Table identifier
             value_codes: Dictionary mapping variable IDs to lists of value codes or selection expressions
@@ -764,10 +763,9 @@ class PxAPI:
             output_format_params: List of output format parameters
             heading: Variables to place in heading
             stub: Variables to place in stub
-            chunk_size: Maximum data cells per chunk (defaults to API limit and cannot exceed it)
-        
+    
         Returns:
-            Data in requested format. If chunking is used, returns a list of chunks.
+            Data in requested format. If chunking is needed, returns a list of chunks.
         """
         # Validate output format
         if output_format is not None and not isinstance(output_format, OutputFormat):
@@ -775,22 +773,13 @@ class PxAPI:
 
         if value_codes is None:
             value_codes = {}
-        
-        # Ensure chunk_size doesn't exceed API limit
-        if chunk_size is not None and chunk_size > self.max_data_cells:
-            print(f"\nWarning: Requested chunk_size {chunk_size:,} exceeds API limit of {self.max_data_cells:,}.")
-            print(f"Setting chunk_size to maximum allowed: {self.max_data_cells:,}")
-            chunk_size = self.max_data_cells
-
-        # Use max_data_cells as default chunk size
-        chunk_size = chunk_size or self.max_data_cells
-
+    
         # Get JSON-stat metadata for calculations - this has all the information we need
         metadata_stat = self.get_table_metadata(table_id, output_format="json-stat2")
-    
+
         # Use the extraction method
         var_meta_dict = self._extract_variable_metadata(metadata_stat)
-    
+
         # Format for compatibility with _get_chunk_variable
         metadata_px = {
             'variables': [
@@ -813,8 +802,8 @@ class PxAPI:
         print(f"\nRetrieving data from table {table_id}")
         print(f"Calculated data cells: {self._format_number(total_cells)}")
 
-        # If total cells are within chunk size, make single request
-        if total_cells <= chunk_size or chunk_size <= 0:
+        # If total cells are within API limit, make single request
+        if total_cells <= self.max_data_cells:
             return self._make_single_request(
                 table_id=table_id,
                 value_codes=value_codes,
@@ -837,7 +826,7 @@ class PxAPI:
             table_id=table_id,
             chunk_var=chunk_var,
             value_codes=value_codes,
-            chunk_size=chunk_size,
+            chunk_size=self.max_data_cells,
             metadata_stat=metadata_stat
         )
 
@@ -865,17 +854,16 @@ class PxAPI:
         return results
     
     def get_data_as_dataframe(self,
-                         table_id: str,
-                         value_codes: Optional[Dict[str, List[str]]] = None,
-                         output_format_param: OutputFormatParam = OutputFormatParam.USE_TEXTS,
-                         region_type: Optional[str] = None,
-                         clean_colnames: bool = False,
-                         chunk_size: Optional[int] = None) -> pd.DataFrame:
+                     table_id: str,
+                     value_codes: Optional[Dict[str, List[str]]] = None,
+                     output_format_param: OutputFormatParam = OutputFormatParam.USE_TEXTS,
+                     region_type: Optional[str] = None,
+                     clean_colnames: bool = False) -> pd.DataFrame:
         """
         Get table data as a pandas DataFrame with smart formatting options.
-    
-        This method handles automatic chunking for large requests.
-    
+
+        This method handles automatic chunking for large requests based on the API's data cell limit.
+
         Args:
             table_id: Table identifier
             value_codes: Dictionary mapping variable IDs to lists of value codes or selection expressions
@@ -884,11 +872,10 @@ class PxAPI:
                 USE_TEXTS (default), USE_CODES, or USE_CODES_AND_TEXTS
             region_type: Filter for specific region types: "deso" or "regso" (or None for no filtering)
             clean_colnames: If True, standardizes column names (lowercase, underscores, ASCII)
-            chunk_size: Maximum data cells per chunk (defaults to API limit and cannot exceed it)
-    
+
         Returns:
             pandas.DataFrame: DataFrame with requested statistical data
-    
+
         Raises:
             PxAPIError: On API errors (invalid table, too many cells, etc.)
             ValueError: On invalid parameters (e.g., invalid region_type)
@@ -897,10 +884,9 @@ class PxAPI:
             data = self.get_table_data(
                 table_id=table_id,
                 value_codes=value_codes,
-                output_format=OutputFormat.JSON_STAT2,
-                chunk_size=chunk_size
+                output_format=OutputFormat.JSON_STAT2
             )
-        
+    
             if isinstance(data, list):
                 frames = []
                 for chunk in data:
@@ -917,7 +903,7 @@ class PxAPI:
                     output_format_param,
                     clean_colnames
                 )
-        
+    
             # Apply region filtering if requested
             if region_type and 'region_code' in df.columns:
                 region_type_lower = region_type.lower()
@@ -936,10 +922,10 @@ class PxAPI:
                     df = df[regso_mask]
                 else:
                     raise ValueError("Invalid region_type. Use 'deso', 'regso', or None")
-        
+    
             print(f"\nSuccessfully retrieved {len(df):,} rows of data")
             return df
-        
+    
         except Exception as e:
             print(f"\nError retrieving data: {str(e)}")
             raise
@@ -1290,13 +1276,21 @@ class PxAPI:
         return best_var, cells
 
     def _prepare_chunks(self, 
-                  table_id: str,
-                  chunk_var: str,
-                  value_codes: Dict[str, List[str]],
-                  chunk_size: int,
-                  metadata_stat: Dict) -> List[Dict[str, List[str]]]:
+                table_id: str,
+                chunk_var: str,
+                value_codes: Dict[str, List[str]],
+                metadata_stat: Dict) -> List[Dict[str, List[str]]]:
         """
         Prepare chunked value codes for requests using JSON-stat2 metadata
+    
+        Args:
+            table_id: Table identifier
+            chunk_var: Variable ID to chunk on
+            value_codes: Dictionary of variable selections
+            metadata_stat: JSON-stat2 metadata
+        
+        Returns:
+            List of value_codes dictionaries, one for each chunk
         """
         dimension = metadata_stat['dimension'][chunk_var]
         all_codes = list(dimension['category']['index'].keys())
@@ -1315,7 +1309,7 @@ class PxAPI:
             validate_max_cells=False
         )
         cells_per_value = total_cells / len(all_values)
-        values_per_chunk = max(1, int(chunk_size / cells_per_value))
+        values_per_chunk = max(1, int(self.max_data_cells / cells_per_value))
 
         # Create chunks
         chunks = []
