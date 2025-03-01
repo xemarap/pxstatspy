@@ -826,7 +826,6 @@ class PxAPI:
             table_id=table_id,
             chunk_var=chunk_var,
             value_codes=value_codes,
-            chunk_size=self.max_data_cells,
             metadata_stat=metadata_stat
         )
 
