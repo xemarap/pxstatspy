@@ -11,9 +11,9 @@ def read_readme():
             with open("README.md", "r", encoding="latin-1") as fh:
                 return fh.read()
         except:
-            return "A Python wrapper for the Statistics Sweden PxAPI-2"
+            return "A Python wrapper for the Statistics Sweden PxWebAPI 2.0"
     except:
-        return "A Python wrapper for the Statistics Sweden PxAPI-2"
+        return "A Python wrapper for the Statistics Sweden PxWebAPI 2.0"
 
 setup(
     name="pxstatspy",
@@ -25,7 +25,7 @@ setup(
     ],
     python_requires=">=3.7",
     author="Emanuel Raptis",
-    description="A Python wrapper for the Statistics Sweden PxAPI-2",
+    description="A Python wrapper for the Statistics Sweden PxWebAPI 2.0",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
     url="https://github.com/xemarap/pxstatspy",
@@ -39,7 +39,9 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "License :: MIT License",
         "Operating System :: OS Independent",
     ],
     keywords="statistics, sweden, api, data, px",
