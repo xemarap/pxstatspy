@@ -190,14 +190,14 @@ class NavigationExplorer:
         if contents['folders']:
             print("\nFolders:")
             for item in contents['folders']:
-                print(f"  - {item.label} (ID: {item.id})")
+                print(f"  📁 {item.id} - {item.label}")
                 if item.description:
                     print(f"    {item.description}")
                     
         if contents['tables']:
             print("\nTables:")
             for item in contents['tables']:
-                print(f"  - {item.label} (ID: {item.id})")
+                print(f"  📊 {item.id} - {item.label}")
                 if item.updated:
                     print(f"    Last updated: {item.updated.strftime('%Y-%m-%d')}")
                 if item.tags:
