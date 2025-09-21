@@ -89,120 +89,6 @@ class PxAPIError(Exception):
     """Base exception for PxAPI errors"""
     pass
 
-@dataclass
-class NavigationItem:
-    """Represents an item in the navigation structure"""
-    id: str
-    label: str
-    type: str
-    description: Optional[str] = None
-    updated: Optional[datetime] = None
-    tags: Optional[List[str]] = None
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'NavigationItem':
-        """Create NavigationItem from API response dictionary"""
-        updated = None
-        if 'updated' in data:
-            try:
-                updated = datetime.fromisoformat(data['updated'].rstrip('Z'))
-            except (ValueError, AttributeError):
-                pass
-                
-        return cls(
-            id=data['id'],
-            label=data['label'],
-            type=data['type'],
-            description=data.get('description'),
-            updated=updated,
-            tags=data.get('tags', [])
-        )
-
-class NavigationExplorer:
-    """Helper class for exploring the database structure"""
-    
-    def __init__(self, api: 'PxAPI'):
-        self.api = api
-        self._current_folder = None
-        self.history = []
-        
-    def get_root(self) -> Dict[str, List[NavigationItem]]:
-        """Get root folder contents categorized by type"""
-        response = self.api.get_navigation_root()
-        self._current_folder = response
-        self.history = []
-        return self._categorize_contents(response['folderContents'])
-    
-    def navigate_to(self, folder_id: str) -> Dict[str, List[NavigationItem]]:
-        """Navigate to specific folder by ID"""
-        response = self.api.get_navigation_by_id(folder_id)
-        self._current_folder = response
-        self.history.append(folder_id)
-        return self._categorize_contents(response['folderContents'])
-    
-    def go_back(self) -> Optional[Dict[str, List[NavigationItem]]]:
-        """Go back to previous folder"""
-        if not self.history:
-            return None
-            
-        self.history.pop()  # Remove current
-        if not self.history:
-            return self.get_root()
-            
-        return self.navigate_to(self.history[-1])
-    
-    def _categorize_contents(self, contents: List[Dict]) -> Dict[str, List[NavigationItem]]:
-        """Organize folder contents by type"""
-        categorized = {
-            'folders': [],
-            'tables': [],
-            'headings': []
-        }
-        
-        for item in contents:
-            nav_item = NavigationItem.from_dict(item)
-            if nav_item.type == 'FolderInformation':
-                categorized['folders'].append(nav_item)
-            elif nav_item.type == 'Table':
-                categorized['tables'].append(nav_item)
-            elif nav_item.type == 'Heading':
-                categorized['headings'].append(nav_item)
-                
-        return categorized
-    
-    def print_current_location(self):
-        """Print information about current folder"""
-        if not self._current_folder:
-            print("Not currently in any folder (call get_root() first)")
-            return
-            
-        print(f"\nCurrent folder: {self._current_folder['label']}")
-        if self._current_folder.get('description'):
-            print(f"Description: {self._current_folder['description']}")
-            
-        contents = self._categorize_contents(self._current_folder['folderContents'])
-        
-        if contents['headings']:
-            print("\nHeadings:")
-            for item in contents['headings']:
-                print(f"  - {item.label}")
-                
-        if contents['folders']:
-            print("\nFolders:")
-            for item in contents['folders']:
-                print(f"  📁 {item.id} - {item.label}")
-                if item.description:
-                    print(f"    {item.description}")
-                    
-        if contents['tables']:
-            print("\nTables:")
-            for item in contents['tables']:
-                print(f"  📊 {item.id} - {item.label}")
-                if item.updated:
-                    print(f"    Last updated: {item.updated.strftime('%Y-%m-%d')}")
-                if item.tags:
-                    print(f"    Tags: {', '.join(item.tags)}")
-
 class PxVariables:
     """Constants for standard PxAPI-2 variable names and types"""
     
@@ -387,9 +273,6 @@ class PxAPI:
             time_window=self._default_time_window
         )
         
-        # Create navigator
-        self.navigator = NavigationExplorer(self)
-        
         # Fetch actual configuration if requested
         if fetch_config:
             try:
@@ -418,16 +301,6 @@ class PxAPI:
     def get_config(self) -> Dict:
         """Get API configuration settings"""
         response = self._make_request('GET', '/config')
-        return response.json()
-
-    def get_navigation_root(self) -> Dict:
-        """Get root folder navigation"""
-        response = self._make_request('GET', '/navigation')
-        return response.json()
-
-    def get_navigation_by_id(self, folder_id: str) -> Dict:
-        """Get folder navigation by ID"""
-        response = self._make_request('GET', f'/navigation/{folder_id}')
         return response.json()
     
     def find_tables(self,
