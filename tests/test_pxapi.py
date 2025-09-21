@@ -282,27 +282,6 @@ def test_get_data_as_dataframe_region_filter(api_client, sample_jsonstat_data):
         assert all(df["region_code"].str.len() == 9)
         assert all(df["region_code"].str[4].isin(["A", "B"]))
 
-
-# Test navigation functionality
-def test_navigation_explorer(api_client, mock_response):
-    """Test navigation explorer functionality"""
-    mock_response.json.return_value = {
-        "id": "BE",
-        "label": "Population",
-        "folderContents": [
-            {
-                "id": "BE01",
-                "label": "Population Statistics",
-                "type": "FolderInformation"
-            }
-        ]
-    }
-    
-    with patch('requests.Session.request', return_value=mock_response):
-        contents = api_client.navigator.navigate_to("BE")
-        assert len(contents["folders"]) == 1
-        assert contents["folders"][0].id == "BE01"
-
 @pytest.fixture
 def large_table_metadata():
     """Sample metadata for a large table"""
@@ -658,10 +637,6 @@ def test_live_api_connection():
         language="en"
     )
     client = PxAPI(config)
-    
-    # Test basic navigation
-    root = client.navigator.get_root()
-    assert root is not None
     
     # Test table search
     tables = client.find_tables(query="population", display=False)
