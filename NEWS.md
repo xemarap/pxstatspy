@@ -1,4 +1,9 @@
 
+# pxstatspy v1.0.0
+
+- Updated base URL to the official SCB production endpoint in documentation: https://statistikdatabasen.scb.se/api/v2
+- Removed all "beta" references from documentation and code
+
 # pxstatspy v0.2.0
 
 Bump version to 0.2.0 due to removal of Navigation API

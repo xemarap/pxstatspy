@@ -17,7 +17,7 @@ def read_readme():
 
 setup(
     name="pxstatspy",
-    version="0.2.0",
+    version="1.0.0",
     packages=find_packages(),
     install_requires=[
         "requests>=2.25.0",
@@ -30,7 +30,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/xemarap/pxstatspy",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Programming Language :: Python :: 3",
