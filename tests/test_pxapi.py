@@ -633,7 +633,7 @@ def test_chunk_combination(api_client, large_metadata, large_metadata_jsonstat):
 def test_live_api_connection():
     """Test connection to live API (integration test)"""
     config = PxAPIConfig(
-        base_url="https://api.scb.se/OV0104/v2beta/api/v2",  # Updated URL for v2 API
+        base_url="https://statistikdatabasen.scb.se/api/v2",  # Updated URL for v2 API
         language="en"
     )
     client = PxAPI(config)
