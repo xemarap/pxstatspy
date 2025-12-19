@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pxstatspy"
+version = "1.0.0"
+authors = [
+    {name = "Emanuel Raptis", email = "emanuelraptis@gmail.com"},
+]
+description = "A Python wrapper for the Statistics Sweden PxWebAPI 2.0"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE.md"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = [statistics, sweden, api, data, px]
+dependencies = [
+    "requests>=2.25.0",
+    "pandas>=1.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/xemarap/pxstatspy"
+Documentation = "https://github.com/xemarap/pxstatspy/blob/main/README.md"
+Repository = "https://github.com/xemarap/pxstatspy"
+"Bug Tracker" = "https://github.com/xemarap/pxstatspy/issues"
+
+[tool.setuptools]
+license-files = ["LICENSE.md"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pxstatspy*"]
+exclude = ["tests*"]

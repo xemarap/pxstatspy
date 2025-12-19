@@ -1,0 +1,22 @@
+# Include essential documentation files
+include README.md
+include LICENSE.md
+include pyproject.toml
+
+# Include all Python files in the koladapy package
+recursive-include pxstatspy *.py
+
+# Exclude test files and directories
+recursive-exclude tests *
+exclude tests
+
+# Exclude dependency licenses folder (keep in repo, not in package)
+recursive-exclude LICENSES *
+exclude LICENSES
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.egg-info
