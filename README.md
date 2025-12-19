@@ -35,7 +35,7 @@ A comprehensive Python wrapper for the Statistics Sweden PxWebAPI 2.0, providing
 
 ## Installation
 
-Install the latest version from GitHub:
+Install the latest version:
 
 ```bash
 pip install pxstatspy
