@@ -49,13 +49,15 @@ class RateLimiter:
             
             if len(self.calls) >= self.max_calls:
                 # Calculate sleep time based on oldest call
-                wait_time = self.calls[0] + self.time_window - now
-                if wait_time > 0:
-                    time.sleep(wait_time)
-                    # Update time and clean expired calls after waiting
-                    now = time.time()
-                    while self.calls and now - self.calls[0] >= self.time_window:
-                        self.calls.popleft()
+                # Safety check: ensure we still have calls after the cleanup
+                if self.calls:
+                    wait_time = self.calls[0] + self.time_window - now
+                    if wait_time > 0:
+                        time.sleep(wait_time)
+                        # Update time and clean expired calls after waiting
+                        now = time.time()
+                        while self.calls and now - self.calls[0] >= self.time_window:
+                            self.calls.popleft()
             
             # Add the current call timestamp
             self.calls.append(now)
