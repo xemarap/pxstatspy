@@ -1,4 +1,12 @@
 
+# pxstatspy v1.0.1
+
+Fix: Resolve IndexError in RateLimiter.wait_if_needed()
+   
+   - Add safety check before accessing self.calls[0]
+   - Prevents crash when deque becomes empty after cleanup
+   - Fixes initialization issue with Norwegian SSB API endpoint
+
 # pxstatspy v1.0.0
 
 - Updated base URL to the official SCB production endpoint in documentation: https://statistikdatabasen.scb.se/api/v2
