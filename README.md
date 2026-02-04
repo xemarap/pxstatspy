@@ -10,6 +10,8 @@ A comprehensive Python wrapper for the Statistics Sweden PxWebAPI 2.0, providing
 
 [![Python Versions](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)](#)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Downloads](https://static.pepy.tech/badge/pxstatspy)](https://pepy.tech/project/pxstatspy)
+[![Downloads](https://static.pepy.tech/badge/pxstatspy/month)](https://pepy.tech/project/pxstatspy)
 
 **Note:** This is an independent project and is not associated with Statistics Sweden (SCB).
 
